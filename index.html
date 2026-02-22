@@ -163,8 +163,7 @@
   <!-- Tabs -->
   <div class="tabs">
     <div class="tab active" onclick="switchTab('overview',this)">Overview</div>
-    <div class="tab" onclick="switchTab('custom',this)">Custom Bills</div>
-    <div class="tab" onclick="switchTab('defaults',this)">Default Bills</div>
+    <div class="tab" onclick="switchTab('bills',this)">Bills</div>
     <div class="tab" onclick="switchTab('paychecks',this)">Paychecks</div>
   </div>
 
@@ -196,17 +195,10 @@
     <div class="card">
       <div class="card-title">Free to Spend</div>
       <div style="display:flex;gap:4px;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:14px;border:1px solid var(--border);">
-        <div id="subtab-paycheck" class="subtab active" onclick="switchSubTab('paycheck')">Next Paycheck</div>
-        <div id="subtab-month" class="subtab" onclick="switchSubTab('month')">End of Month</div>
+        <div id="subtab-month" class="subtab active" onclick="switchSubTab('month')">End of Month</div>
         <div id="subtab-rolling" class="subtab" onclick="switchSubTab('rolling')">2-Month</div>
       </div>
-      <div id="subtab-content-paycheck">
-        <div class="big-number" id="outlook-num">--</div>
-        <div class="stat-label" id="outlook-label"></div>
-        <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;" id="outlook-breakdown"></div>
-        <div class="warning-banner" id="low-warning2"></div>
-      </div>
-      <div id="subtab-content-month" style="display:none;">
+      <div id="subtab-content-month">
         <div class="big-number" id="month-num">--</div>
         <div class="stat-label" id="month-label"></div>
         <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;" id="month-breakdown"></div>
@@ -232,28 +224,13 @@
 
   </div>
 
-  <!-- TAB: Custom Bills -->
-  <div class="tab-content" id="tab-custom">
-    <div class="card">
-      <div class="card-title">Your Custom Bills</div>
-      <div id="custom-list"></div>
-      <div id="no-custom" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted);display:none;">No custom bills yet.</div>
-      <hr>
-      <div class="card-title" style="margin-bottom:10px;">Add New</div>
-      <div class="add-form">
-        <input type="text" id="add-name" placeholder="Bill name" class="full">
-        <input type="number" id="add-amount" placeholder="Amount ($)">
-        <input type="number" id="add-day" placeholder="Day (1–31)" min="1" max="31">
-        <button class="btn full" onclick="addCustom()">+ Add Bill</button>
-      </div>
-    </div>
-  </div>
+  <!-- TAB: Bills -->
+  <div class="tab-content" id="tab-bills">
 
-  <!-- TAB: Default Bills -->
-  <div class="tab-content" id="tab-defaults">
+    <!-- Default Bills -->
     <div class="card">
-      <div class="card-title">Edit Default Bills</div>
-      <div style="display:grid;grid-template-columns:1fr 80px 60px 36px;gap:6px;padding:0 12px 6px;margin-bottom:4px;">
+      <div class="card-title">Default Bills</div>
+      <div style="display:grid;grid-template-columns:1fr 80px 60px 36px;gap:6px;padding:0 4px 6px;margin-bottom:4px;">
         <div class="row-label">Name</div>
         <div class="row-label">Amount</div>
         <div class="row-label">Day</div>
@@ -264,6 +241,22 @@
         <button class="btn" onclick="saveDefaultBills()">Save Changes</button>
       </div>
     </div>
+
+    <!-- Custom Bills -->
+    <div class="card">
+      <div class="card-title">Custom Bills</div>
+      <div id="custom-list"></div>
+      <div id="no-custom" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted);display:none;margin-bottom:12px;">No custom bills added yet.</div>
+      <hr>
+      <div class="card-title" style="margin-bottom:10px;">Add New</div>
+      <div class="add-form">
+        <input type="text" id="add-name" placeholder="Bill name" class="full">
+        <input type="number" id="add-amount" placeholder="Amount ($)">
+        <input type="number" id="add-day" placeholder="Day (1–31)" min="1" max="31">
+        <button class="btn full" onclick="addCustom()">+ Add Bill</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- TAB: Paychecks -->
@@ -602,7 +595,11 @@ function renderEndOfMonth() {
     else totalBills += Math.abs(ev.amount);
   });
 
-  const freeToSpend = state.balance + totalIncome - totalBills;
+  // Also subtract bills due on the 1st of next month
+  let firstOfMonthBills = 0;
+  allBills().forEach(b => { if (b.day === 1) firstOfMonthBills += b.amount; });
+
+  const freeToSpend = state.balance + totalIncome - totalBills - firstOfMonthBills;
   const monthName = nextFirst.toLocaleDateString('en-US', {month:'long', year:'numeric'});
 
   const el = document.getElementById('month-num');
@@ -614,9 +611,10 @@ function renderEndOfMonth() {
   const bd = document.getElementById('month-breakdown');
   bd.innerHTML = '';
   [
-    {label: 'Current balance',              value: state.balance,  color: 'var(--text)'},
+    {label: 'Current balance',              value: state.balance,        color: 'var(--text)'},
     {label: '+ Income before ' + nextFirst.toLocaleDateString('en-US',{month:'short',day:'numeric'}), value: totalIncome, color: 'var(--accent)'},
     {label: '− Bills before ' + nextFirst.toLocaleDateString('en-US',{month:'short',day:'numeric'}),  value: -totalBills, color: 'var(--red)'},
+    {label: `− ${monthName} 1st bills`,     value: -firstOfMonthBills,   color: 'var(--red)'},
   ].forEach(r => {
     if (r.value === 0) return;
     const row = document.createElement('div');
@@ -645,7 +643,7 @@ function renderEndOfMonth() {
 }
 
 function switchSubTab(name) {
-  ['paycheck','month','rolling'].forEach(t => {
+  ['month','rolling'].forEach(t => {
     document.getElementById(`subtab-${t}`).classList.toggle('active', t === name);
     document.getElementById(`subtab-content-${t}`).style.display = t === name ? 'block' : 'none';
   });
@@ -759,7 +757,6 @@ function switchTab(name, el) {
 // ── Render all ───────────────────────────────────────────
 function renderAll() {
   renderTimeline();
-  render30Day();
   renderRolling30();
   renderEndOfMonth();
   renderPaycheckOverview();
