@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --surface2: #1e2229;
+    --border: #2a2f3a;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,0.12);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.12);
+    --yellow: #fbbf24;
+    --yellow-dim: rgba(251,191,36,0.12);
+    --pink: #f472b6;
+    --pink-dim: rgba(244,114,182,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 16px 12px;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 0.8rem; font-family: 'DM Mono', monospace; margin-bottom: 20px; }
+  .grid { display: flex; flex-direction: column; gap: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .card-title { font-size: 0.7rem; font-family: 'DM Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .big-number { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+  .big-number.positive { color: var(--accent); }
+  .big-number.negative { color: var(--red); }
+  .big-number.neutral { color: var(--text); }
+  .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 6px; font-family: 'DM Mono', monospace; }
+  .balance-input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+  input[type="number"], input[type="text"] {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 1rem;
+    padding: 8px 12px; outline: none; width: 100%; transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--accent); }
+  .btn {
+    background: var(--accent-dim); border: 1px solid var(--accent); border-radius: 8px;
+    color: var(--accent); cursor: pointer; font-family: 'Syne', sans-serif;
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; padding: 8px 16px;
+    transition: background 0.2s; white-space: nowrap;
+  }
+  .btn:hover { background: rgba(74,222,128,0.22); }
+  .timeline { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; padding-right: 2px; }
+  .timeline::-webkit-scrollbar { width: 4px; }
+  .timeline::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .t-item {
+    display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px;
+    border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); font-size: 0.82rem;
+  }
+  .t-item.today { border-color: var(--yellow); background: var(--yellow-dim); }
+  .t-item.income { border-color: rgba(74,222,128,0.3); }
+  .t-item.fiancee { border-color: rgba(244,114,182,0.3); }
+  .t-date { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); min-width: 50px; padding-top: 2px; }
+  .t-name { flex: 1; font-weight: 600; line-height: 1.3; }
+  .t-note { font-size: 0.65rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .t-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+  .t-amount { font-family: 'DM Mono', monospace; font-weight: 600; font-size: 0.82rem; }
+  .t-amount.out { color: var(--red); }
+  .t-amount.in { color: var(--accent); }
+  .t-amount.fiancee { color: var(--pink); }
+  .t-balance { font-family: 'DM Mono', monospace; font-size: 0.68rem; }
+  .t-tag { font-size: 0.6rem; font-family: 'DM Mono', monospace; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 20px; text-transform: uppercase; }
+  .t-tag.bill { background: var(--red-dim); color: var(--red); }
+  .t-tag.income { background: var(--accent-dim); color: var(--accent); }
+  .t-tag.fiancee { background: var(--pink-dim); color: var(--pink); }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .pill { font-size: 0.7rem; font-family: 'DM Mono', monospace; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .pill.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .warning-banner { background: var(--red-dim); border: 1px solid var(--red); border-radius: 10px; color: var(--red); font-size: 0.78rem; font-family: 'DM Mono', monospace; padding: 10px 12px; margin-top: 10px; display: none; }
+  .warning-banner.show { display: block; }
+  .prog-wrap { margin-top: 12px; }
+  .prog-label { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-bottom: 6px; }
+  .prog-bar { background: var(--surface2); border-radius: 99px; height: 6px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+  .prog-fill.good { background: var(--accent); }
+  .prog-fill.warn { background: var(--yellow); }
+  .prog-fill.bad { background: var(--red); }
+  .add-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .add-form .full-btn { grid-column: 1 / -1; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .dot.red { background: var(--red); }
+  .dot.green { background: var(--accent); }
+  .dot.pink { background: var(--pink); }
+  .saved-toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--surface2); border: 1px solid var(--accent); border-radius: 99px;
+    color: var(--accent); font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    padding: 8px 18px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 99;
+  }
+  .saved-toast.show { opacity: 1; }
+  .custom-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
+  .del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 0 2px; }
+  .del-btn:hover { color: var(--red); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>My Budget</h1>
+  <div class="subtitle" id="today-label"></div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-title">Current Balance</div>
+      <div class="balance-input-row">
+        <span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:1.1rem;">$</span>
+        <input type="number" id="balance-input" step="0.01" min="0" style="font-size:1.4rem;font-weight:700;">
+      </div>
+      <div class="stat-label">edit anytime — saves automatically</div>
+      <div class="warning-banner" id="low-warning"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">30-Day Outlook</div>
+      <div class="big-number" id="outlook-num">—</div>
+      <div class="stat-label" id="outlook-label">projected balance after 30 days</div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>bills covered</span><span id="prog-pct">—</span></div>
+        <div class="prog-bar"><div class="prog-fill good" id="prog-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Next Paychecks</div>
+      <div id="paycheck-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💕 Fiancée Payments (Apple Pay)</div>
+      <div id="fiancee-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="card-title" style="margin-bottom:0;">Payment Timeline</div>
+      </div>
+      <div class="pills">
+        <div class="pill active" onclick="setFilter('all',this)">All</div>
+        <div class="pill" onclick="setFilter('income',this)">Income</div>
+        <div class="pill" onclick="setFilter('bill',this)">Bills</div>
+        <div class="pill" onclick="setFilter('fiancee',this)">Fiancée</div>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Add Custom Bill</div>
+      <div id="custom-list"></div>
+      <div class="add-form">
+        <input type="text" id="add-name" placeholder="Bill name">
+        <input type="number" id="add-amount" placeholder="Amount ($)">
+        <input type="number" id="add-day" placeholder="Day of month (1–31)" min="1" max="31" style="grid-column:1/-1;">
+        <button class="btn full-btn" onclick="addCustom()">+ Add Bill</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="saved-toast" id="toast">✓ Saved</div>
+
+<script>
+const STORAGE_KEY = 'budget_v2';
+
+const DEFAULT_BILLS = [
+  {name:'Rent',          amount:721, day:1,  type:'bill'},
+  {name:'Rocket Loan',   amount:530, day:1,  type:'bill'},
+  {name:'Student Loan',  amount:50,  day:1,  type:'bill'},
+  {name:'Discover',      amount:450, day:6,  type:'bill'},
+  {name:'Spotify',       amount:19,  day:6,  type:'bill'},
+  {name:'Citi Card',     amount:50,  day:13, type:'bill'},
+  {name:'Power & WiFi',  amount:160, day:15, type:'fiancee', note:'$100 power + $40 WiFi via Apple Pay'},
+  {name:'Insurance',     amount:93,  day:15, type:'bill'},
+  {name:'HBO',           amount:19,  day:15, type:'bill'},
+  {name:'Netflix',       amount:19,  day:15, type:'bill'},
+  {name:'Phone',         amount:60,  day:22, type:'bill'},
+  {name:'Car Payment',   amount:377, day:25, type:'bill'},
+];
+
+let state = { balance: 743, customBills: [] };
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); showToast(); } catch(e) {}
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (p.balance !== undefined) state.balance = parseFloat(p.balance) || 0;
+    if (Array.isArray(p.customBills)) state.customBills = p.customBills;
+  } catch(e) {}
+}
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+const today = new Date(); today.setHours(0,0,0,0);
+document.getElementById('today-label').textContent =
+  today.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+function allBills() { return [...DEFAULT_BILLS, ...state.customBills]; }
+
+function getNextBiweekly(targetDay) {
+  let d = new Date(today);
+  while (d.getDay() !== targetDay) d.setDate(d.getDate()+1);
+  let out = [];
+  for (let i=0; i<6; i++) { out.push(new Date(d)); d.setDate(d.getDate()+14); }
+  return out;
+}
+const tueChecks = getNextBiweekly(2);
+const thuChecks = getNextBiweekly(4);
+let currentFilter = 'all';
+
+function buildEvents(days) {
+  const end = new Date(today); end.setDate(end.getDate()+days);
+  let events = [];
+  let cur = new Date(today.getFullYear(), today.getMonth(), 1);
+  while (cur <= end) {
+    const m = cur.getMonth(), y = cur.getFullYear();
+    allBills().forEach(b => {
+      const dim = new Date(y,m+1,0).getDate();
+      const d = new Date(y, m, Math.min(b.day, dim));
+      if (d >= today && d <= end)
+        events.push({date:d, name:b.name, amount:-b.amount, type:b.type, note:b.note||''});
+    });
+    cur.setMonth(cur.getMonth()+1);
+  }
+  tueChecks.forEach(d => { if(d>=today&&d<=end) events.push({date:new Date(d),name:'Job 1 Paycheck',amount:300,type:'income',note:''}); });
+  thuChecks.forEach(d => { if(d>=today&&d<=end) events.push({date:new Date(d),name:'Job 2 Paycheck',amount:1200,type:'income',note:''}); });
+  events.sort((a,b)=>a.date-b.date);
+  return events;
+}
+
+function fmt(n) { return (n<0?'-$':'$')+Math.abs(n).toFixed(2); }
+function fmtDate(d) { return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function ordinal(n) { return n+(n==1?'st':n==2?'nd':n==3?'rd':'th'); }
+
+function renderTimeline() {
+  const tl = document.getElementById('timeline'); tl.innerHTML='';
+  let running = state.balance;
+  buildEvents(60).forEach(ev => {
+    running += ev.amount;
+    if (currentFilter!=='all' && ev.type!==currentFilter) return;
+    const isToday = ev.date.toDateString()===today.toDateString();
+    const amtClass = ev.amount>0?'in':ev.type==='fiancee'?'fiancee':'out';
+    const dotClass = ev.amount>0?'green':ev.type==='fiancee'?'pink':'red';
+    const tagClass = ev.amount>0?'income':ev.type==='fiancee'?'fiancee':'bill';
+    const tagLabel = ev.amount>0?'income':ev.type==='fiancee'?'fiancée':'bill';
+    const balColor = running<0?'var(--red)':running<200?'var(--yellow)':'var(--muted)';
+    const el = document.createElement('div');
+    el.className='t-item'+(isToday?' today':'')+(ev.type==='income'?' income':'')+(ev.type==='fiancee'?' fiancee':'');
+    el.innerHTML=`
+      <div class="dot ${dotClass}"></div>
+      <div class="t-date">${fmtDate(ev.date)}</div>
+      <div class="t-name">${ev.name}${ev.note?`<div class="t-note">${ev.note}</div>`:''}</div>
+      <div class="t-right">
+        <span class="t-tag ${tagClass}">${tagLabel}</span>
+        <span class="t-amount ${amtClass}">${fmt(ev.amount)}</span>
+        <span class="t-balance" style="color:${balColor}">→ ${fmt(running)}</span>
+      </div>`;
+    tl.appendChild(el);
+  });
+}
+
+function render30Day() {
+  const events = buildEvents(30);
+  let running=state.balance, lowest=running, total=0, covered=0;
+  events.forEach(ev => {
+    running+=ev.amount; lowest=Math.min(lowest,running);
+    if(ev.amount<0){ total++; if(running>=0) covered++; }
+  });
+  const el=document.getElementById('outlook-num');
+  el.textContent=fmt(running);
+  el.className='big-number '+(running>200?'positive':running<0?'negative':'neutral');
+  document.getElementById('outlook-label').textContent=`projected in 30 days · lowest: ${fmt(lowest)}`;
+  const pct=total>0?Math.round(covered/total*100):100;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fill=document.getElementById('prog-fill');
+  fill.style.width=pct+'%';
+  fill.className='prog-fill '+(pct>=80?'good':pct>=50?'warn':'bad');
+  const warn=document.getElementById('low-warning');
+  if(lowest<100){ warn.textContent=`⚠ Balance may drop to ${fmt(lowest)} — review timeline`; warn.classList.add('show'); }
+  else warn.classList.remove('show');
+}
+
+function renderPaychecks() {
+  const el=document.getElementById('paycheck-list'); el.innerHTML='';
+  [[tueChecks,300,'Job 1'],[thuChecks,1200,'Job 2']].forEach(([dates,amt,label])=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid rgba(74,222,128,0.25);border-radius:10px;';
+    d.innerHTML=`<div><div style="font-weight:700;font-size:0.88rem;">${label}</div><div style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);">Next: ${fmtDate(dates[0])} · biweekly</div></div><div style="font-family:'DM Mono',monospace;color:var(--accent);font-weight:700;">+${fmt(amt)}</div>`;
+    el.appendChild(d);
+  });
+}
+
+function renderFiancee() {
+  const el=document.getElementById('fiancee-list'); el.innerHTML='';
+  allBills().filter(b=>b.type==='fiancee').forEach(b=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid rgba(244,114,182,0.25);border-radius:10px;';
+    d.innerHTML=`<div><div style="font-weight:700;font-size:0.88rem;">${b.name}</div><div style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);">~${ordinal(b.day)} each month · Apple Pay</div>${b.note?`<div style="font-family:'DM Mono',monospace;font-size:0.67rem;color:var(--muted);margin-top:2px;">${b.note}</div>`:''}</div><div style="font-family:'DM Mono',monospace;color:var(--pink);font-weight:700;">${fmt(b.amount)}</div>`;
+    el.appendChild(d);
+  });
+}
+
+function renderCustomList() {
+  const el=document.getElementById('custom-list'); el.innerHTML='';
+  state.customBills.forEach((b,i)=>{
+    const row=document.createElement('div'); row.className='custom-row';
+    row.innerHTML=`<div><span style="font-weight:600;font-size:0.85rem;">${b.name}</span><span style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);margin-left:8px;">${fmt(b.amount)} · ${ordinal(b.day)}</span></div><button class="del-btn" onclick="removeCustom(${i})">✕</button>`;
+    el.appendChild(row);
+  });
+}
+
+function removeCustom(i) { state.customBills.splice(i,1); save(); renderAll(); }
+
+function addCustom() {
+  const name=document.getElementById('add-name').value.trim();
+  const amount=parseFloat(document.getElementById('add-amount').value);
+  const day=parseInt(document.getElementById('add-day').value);
+  if(!name||isNaN(amount)||amount<=0||isNaN(day)||day<1||day>31){ alert('Please fill in all fields correctly.'); return; }
+  state.customBills.push({name,amount,day,type:'bill'});
+  document.getElementById('add-name').value='';
+  document.getElementById('add-amount').value='';
+  document.getElementById('add-day').value='';
+  save(); renderAll();
+}
+
+function setFilter(f,el) {
+  currentFilter=f;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderTimeline();
+}
+
+function renderAll() { renderTimeline(); render30Day(); renderPaychecks(); renderFiancee(); renderCustomList(); }
+
+document.getElementById('balance-input').addEventListener('input', function() {
+  state.balance=parseFloat(this.value)||0; save(); renderAll();
+});
+
+load();
+document.getElementById('balance-input').value = state.balance;
+renderAll();
+</script>
+</body>
+</html>
