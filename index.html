@@ -226,10 +226,8 @@
 
   <!-- TAB: Bills -->
   <div class="tab-content" id="tab-bills">
-
-    <!-- Default Bills -->
     <div class="card">
-      <div class="card-title">Default Bills</div>
+      <div class="card-title">Bills</div>
       <div style="display:grid;grid-template-columns:1fr 80px 60px 36px;gap:6px;padding:0 4px 6px;margin-bottom:4px;">
         <div class="row-label">Name</div>
         <div class="row-label">Amount</div>
@@ -237,18 +235,9 @@
         <div></div>
       </div>
       <div id="default-bills-list"></div>
-      <div style="margin-top:12px;">
-        <button class="btn" onclick="saveDefaultBills()">Save Changes</button>
-      </div>
-    </div>
-
-    <!-- Custom Bills -->
-    <div class="card">
-      <div class="card-title">Custom Bills</div>
       <div id="custom-list"></div>
-      <div id="no-custom" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted);display:none;margin-bottom:12px;">No custom bills added yet.</div>
       <hr>
-      <div class="card-title" style="margin-bottom:10px;">Add New</div>
+      <div class="card-title" style="margin-bottom:10px;">Add New Bill</div>
       <div class="add-form">
         <input type="text" id="add-name" placeholder="Bill name" class="full">
         <input type="number" id="add-amount" placeholder="Amount ($)">
@@ -256,7 +245,6 @@
         <button class="btn full" onclick="addCustom()">+ Add Bill</button>
       </div>
     </div>
-
   </div>
 
   <!-- TAB: Paychecks -->
@@ -673,18 +661,19 @@ function renderFiancee() {
 
 // ── Render: Custom bills ─────────────────────────────────
 function renderCustomList() {
-  const el=document.getElementById('custom-list'); el.innerHTML='';
-  const none=document.getElementById('no-custom');
-  if(state.customBills.length===0){ none.style.display='block'; return; }
-  none.style.display='none';
-  state.customBills.forEach((b,i)=>{
-    const row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;';
-    row.innerHTML=`<div><span style="font-weight:600;font-size:0.85rem;">${b.name}</span><span style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);margin-left:8px;">${fmt(b.amount)} · ${ordinal(b.day)}</span></div><button class="del-btn" onclick="removeCustom(${i})">✕</button>`;
+  const el = document.getElementById('custom-list'); el.innerHTML = '';
+  state.customBills.forEach((b, i) => {
+    const row = document.createElement('div');
+    row.className = 'edit-row';
+    row.innerHTML = `
+      <input type="text" value="${b.name}" id="cb-name-${i}" placeholder="Name" oninput="autosaveBills()">
+      <input type="number" value="${b.amount}" id="cb-amount-${i}" placeholder="$" min="0" oninput="autosaveBills()">
+      <input type="number" value="${b.day}" id="cb-day-${i}" placeholder="Day" min="1" max="31" oninput="autosaveBills()">
+      <button class="del-btn" onclick="removeCustom(${i})">✕</button>`;
     el.appendChild(row);
   });
 }
-function removeCustom(i) { state.customBills.splice(i,1); save(); renderAll(); }
+function removeCustom(i) { state.customBills.splice(i, 1); save(); renderAll(); }
 function addCustom() {
   const name=document.getElementById('add-name').value.trim();
   const amount=parseFloat(document.getElementById('add-amount').value);
@@ -704,9 +693,9 @@ function renderDefaultBillsEditor() {
     const row=document.createElement('div');
     row.className='edit-row';
     row.innerHTML=`
-      <input type="text" value="${b.name}" id="db-name-${i}" placeholder="Name">
-      <input type="number" value="${b.amount}" id="db-amount-${i}" placeholder="$" min="0">
-      <input type="number" value="${b.day}" id="db-day-${i}" placeholder="Day" min="1" max="31">
+      <input type="text" value="${b.name}" id="db-name-${i}" placeholder="Name" oninput="autosaveBills()">
+      <input type="number" value="${b.amount}" id="db-amount-${i}" placeholder="$" min="0" oninput="autosaveBills()">
+      <input type="number" value="${b.day}" id="db-day-${i}" placeholder="Day" min="1" max="31" oninput="autosaveBills()">
       <button class="del-btn" onclick="removeDefaultBill(${i})">✕</button>`;
     el.appendChild(row);
   });
@@ -715,18 +704,30 @@ function removeDefaultBill(i) {
   state.defaultBills.splice(i,1);
   save(); renderAll();
 }
-function saveDefaultBills() {
-  const updated = [];
-  state.defaultBills.forEach((b,i) => {
-    const name = document.getElementById(`db-name-${i}`).value.trim();
-    const amount = parseFloat(document.getElementById(`db-amount-${i}`).value);
-    const day = parseInt(document.getElementById(`db-day-${i}`).value);
-    if (name && !isNaN(amount) && !isNaN(day) && day>=1 && day<=31) {
-      updated.push({...b, name, amount, day});
-    }
+function autosaveBills() {
+  state.defaultBills.forEach((b, i) => {
+    const name = document.getElementById(`db-name-${i}`)?.value.trim();
+    const amount = parseFloat(document.getElementById(`db-amount-${i}`)?.value);
+    const day = parseInt(document.getElementById(`db-day-${i}`)?.value);
+    if (name) b.name = name;
+    if (!isNaN(amount) && amount > 0) b.amount = amount;
+    if (!isNaN(day) && day >= 1 && day <= 31) b.day = day;
   });
-  state.defaultBills = updated;
-  save(); renderAll();
+  state.customBills.forEach((b, i) => {
+    const name = document.getElementById(`cb-name-${i}`)?.value.trim();
+    const amount = parseFloat(document.getElementById(`cb-amount-${i}`)?.value);
+    const day = parseInt(document.getElementById(`cb-day-${i}`)?.value);
+    if (name) b.name = name;
+    if (!isNaN(amount) && amount > 0) b.amount = amount;
+    if (!isNaN(day) && day >= 1 && day <= 31) b.day = day;
+  });
+  // Save and re-render only the calculations, not the bill lists (so cursor doesn't jump)
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); showToast(); } catch(e) {}
+  renderTimeline();
+  renderRolling30();
+  renderEndOfMonth();
+  renderPaycheckOverview();
+  renderFiancee();
 }
 
 // ── Render: Paycheck editor ──────────────────────────────
