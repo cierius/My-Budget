@@ -23,17 +23,25 @@
     --pink-dim: rgba(244,114,182,0.12);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    min-height: 100vh;
-    padding: 16px 12px;
-  }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; padding: 16px 12px 40px; }
   .wrap { max-width: 480px; margin: 0 auto; }
   h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; }
   .subtitle { color: var(--muted); font-size: 0.8rem; font-family: 'DM Mono', monospace; margin-bottom: 20px; }
-  .grid { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface); border-radius: 14px; padding: 5px; border: 1px solid var(--border); overflow-x: auto; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1; min-width: 0; text-align: center; padding: 8px 6px; border-radius: 10px;
+    font-size: 0.68rem; font-family: 'DM Mono', monospace; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.2s;
+    white-space: nowrap; border: 1px solid transparent;
+  }
+  .tab.active { background: var(--surface2); color: var(--accent); border-color: var(--border); }
+  .tab-content { display: none; }
+  .tab-content.active { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Cards */
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
   .card-title { font-size: 0.7rem; font-family: 'DM Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
   .big-number { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
@@ -41,10 +49,12 @@
   .big-number.negative { color: var(--red); }
   .big-number.neutral { color: var(--text); }
   .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 6px; font-family: 'DM Mono', monospace; }
+
+  /* Inputs */
   .balance-input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
   input[type="number"], input[type="text"] {
     background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); font-family: 'DM Mono', monospace; font-size: 1rem;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.95rem;
     padding: 8px 12px; outline: none; width: 100%; transition: border-color 0.2s;
   }
   input:focus { border-color: var(--accent); }
@@ -52,10 +62,15 @@
     background: var(--accent-dim); border: 1px solid var(--accent); border-radius: 8px;
     color: var(--accent); cursor: pointer; font-family: 'Syne', sans-serif;
     font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; padding: 8px 16px;
-    transition: background 0.2s; white-space: nowrap;
+    transition: background 0.2s; white-space: nowrap; width: 100%;
   }
   .btn:hover { background: rgba(74,222,128,0.22); }
-  .timeline { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; padding-right: 2px; }
+  .btn.red { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+  .btn.red:hover { background: rgba(248,113,113,0.22); }
+  .btn.small { font-size: 0.72rem; padding: 6px 12px; width: auto; }
+
+  /* Timeline */
+  .timeline { display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; padding-right: 2px; }
   .timeline::-webkit-scrollbar { width: 4px; }
   .timeline::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
   .t-item {
@@ -78,11 +93,17 @@
   .t-tag.bill { background: var(--red-dim); color: var(--red); }
   .t-tag.income { background: var(--accent-dim); color: var(--accent); }
   .t-tag.fiancee { background: var(--pink-dim); color: var(--pink); }
+
+  /* Filter pills */
   .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
   .pill { font-size: 0.7rem; font-family: 'DM Mono', monospace; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.2s; }
   .pill.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  /* Warning */
   .warning-banner { background: var(--red-dim); border: 1px solid var(--red); border-radius: 10px; color: var(--red); font-size: 0.78rem; font-family: 'DM Mono', monospace; padding: 10px 12px; margin-top: 10px; display: none; }
   .warning-banner.show { display: block; }
+
+  /* Progress */
   .prog-wrap { margin-top: 12px; }
   .prog-label { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-bottom: 6px; }
   .prog-bar { background: var(--surface2); border-radius: 99px; height: 6px; overflow: hidden; }
@@ -90,12 +111,33 @@
   .prog-fill.good { background: var(--accent); }
   .prog-fill.warn { background: var(--yellow); }
   .prog-fill.bad { background: var(--red); }
+
+  /* Editable rows */
+  .edit-row {
+    display: grid; grid-template-columns: 1fr 80px 60px 36px;
+    gap: 6px; align-items: center; padding: 10px 12px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px;
+  }
+  .edit-row input { font-size: 0.82rem; padding: 6px 8px; }
+  .edit-row .row-label { font-size: 0.72rem; font-family: 'DM Mono', monospace; color: var(--muted); margin-bottom: 2px; }
+  .del-btn { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .del-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* Add form */
   .add-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-  .add-form .full-btn { grid-column: 1 / -1; }
+  .add-form .full { grid-column: 1 / -1; }
+
+  /* Paycheck edit */
+  .paycheck-edit { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field-label { font-size: 0.68rem; font-family: 'DM Mono', monospace; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+  /* Dot */
   .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
   .dot.red { background: var(--red); }
   .dot.green { background: var(--accent); }
   .dot.pink { background: var(--pink); }
+
+  /* Toast */
   .saved-toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     background: var(--surface2); border: 1px solid var(--accent); border-radius: 99px;
@@ -103,16 +145,25 @@
     padding: 8px 18px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 99;
   }
   .saved-toast.show { opacity: 1; }
-  .custom-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
-  .del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 0 2px; }
-  .del-btn:hover { color: var(--red); }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>My Budget</h1>
   <div class="subtitle" id="today-label"></div>
-  <div class="grid">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('overview',this)">Overview</div>
+    <div class="tab" onclick="switchTab('custom',this)">Custom Bills</div>
+    <div class="tab" onclick="switchTab('defaults',this)">Default Bills</div>
+    <div class="tab" onclick="switchTab('paychecks',this)">Paychecks</div>
+  </div>
+
+  <!-- TAB: Overview -->
+  <div class="tab-content active" id="tab-overview">
 
     <div class="card">
       <div class="card-title">Current Balance</div>
@@ -122,6 +173,19 @@
       </div>
       <div class="stat-label">edit anytime — saves automatically</div>
       <div class="warning-banner" id="low-warning"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="card-title" style="margin-bottom:0;">Payment Timeline</div>
+      </div>
+      <div class="pills">
+        <div class="pill active" onclick="setFilter('all',this)">All</div>
+        <div class="pill" onclick="setFilter('income',this)">Income</div>
+        <div class="pill" onclick="setFilter('bill',this)">Bills</div>
+        <div class="pill" onclick="setFilter('fiancee',this)">Fiancée</div>
+      </div>
+      <div class="timeline" id="timeline"></div>
     </div>
 
     <div class="card">
@@ -144,38 +208,114 @@
       <div id="fiancee-list" style="display:flex;flex-direction:column;gap:8px;"></div>
     </div>
 
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div class="card-title" style="margin-bottom:0;">Payment Timeline</div>
-      </div>
-      <div class="pills">
-        <div class="pill active" onclick="setFilter('all',this)">All</div>
-        <div class="pill" onclick="setFilter('income',this)">Income</div>
-        <div class="pill" onclick="setFilter('bill',this)">Bills</div>
-        <div class="pill" onclick="setFilter('fiancee',this)">Fiancée</div>
-      </div>
-      <div class="timeline" id="timeline"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Add Custom Bill</div>
-      <div id="custom-list"></div>
-      <div class="add-form">
-        <input type="text" id="add-name" placeholder="Bill name">
-        <input type="number" id="add-amount" placeholder="Amount ($)">
-        <input type="number" id="add-day" placeholder="Day of month (1–31)" min="1" max="31" style="grid-column:1/-1;">
-        <button class="btn full-btn" onclick="addCustom()">+ Add Bill</button>
-      </div>
-    </div>
-
   </div>
+
+  <!-- TAB: Custom Bills -->
+  <div class="tab-content" id="tab-custom">
+    <div class="card">
+      <div class="card-title">Your Custom Bills</div>
+      <div id="custom-list"></div>
+      <div id="no-custom" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted);display:none;">No custom bills yet.</div>
+      <hr>
+      <div class="card-title" style="margin-bottom:10px;">Add New</div>
+      <div class="add-form">
+        <input type="text" id="add-name" placeholder="Bill name" class="full">
+        <input type="number" id="add-amount" placeholder="Amount ($)">
+        <input type="number" id="add-day" placeholder="Day (1–31)" min="1" max="31">
+        <button class="btn full" onclick="addCustom()">+ Add Bill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Default Bills -->
+  <div class="tab-content" id="tab-defaults">
+    <div class="card">
+      <div class="card-title">Edit Default Bills</div>
+      <div style="display:grid;grid-template-columns:1fr 80px 60px 36px;gap:6px;padding:0 12px 6px;margin-bottom:4px;">
+        <div class="row-label">Name</div>
+        <div class="row-label">Amount</div>
+        <div class="row-label">Day</div>
+        <div></div>
+      </div>
+      <div id="default-bills-list"></div>
+      <div style="margin-top:12px;">
+        <button class="btn" onclick="saveDefaultBills()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Paychecks -->
+  <div class="tab-content" id="tab-paychecks">
+    <div class="card">
+      <div class="card-title">Job 1</div>
+      <div class="paycheck-edit">
+        <div>
+          <div class="field-label">Amount ($)</div>
+          <input type="number" id="job1-amount" placeholder="e.g. 300">
+        </div>
+        <div>
+          <div class="field-label">Pay Day</div>
+          <select id="job1-day" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.95rem;padding:8px 12px;width:100%;outline:none;">
+            <option value="0">Sunday</option>
+            <option value="1">Monday</option>
+            <option value="2" selected>Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+          </select>
+        </div>
+        <div class="full" style="grid-column:1/-1;">
+          <div class="field-label">Frequency</div>
+          <select id="job1-freq" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.95rem;padding:8px 12px;width:100%;outline:none;">
+            <option value="7">Weekly</option>
+            <option value="14" selected>Biweekly</option>
+            <option value="30">Monthly</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:12px;"><button class="btn" onclick="savePaychecks()">Save Changes</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Job 2</div>
+      <div class="paycheck-edit">
+        <div>
+          <div class="field-label">Amount ($)</div>
+          <input type="number" id="job2-amount" placeholder="e.g. 1200">
+        </div>
+        <div>
+          <div class="field-label">Pay Day</div>
+          <select id="job2-day" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.95rem;padding:8px 12px;width:100%;outline:none;">
+            <option value="0">Sunday</option>
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4" selected>Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;">
+          <div class="field-label">Frequency</div>
+          <select id="job2-freq" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.95rem;padding:8px 12px;width:100%;outline:none;">
+            <option value="7">Weekly</option>
+            <option value="14" selected>Biweekly</option>
+            <option value="30">Monthly</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:12px;"><button class="btn" onclick="savePaychecks()">Save Changes</button></div>
+    </div>
+  </div>
+
 </div>
 <div class="saved-toast" id="toast">✓ Saved</div>
 
 <script>
-const STORAGE_KEY = 'budget_v2';
+const STORAGE_KEY = 'budget_v3';
 
-const DEFAULT_BILLS = [
+const INITIAL_DEFAULT_BILLS = [
   {name:'Rent',          amount:721, day:1,  type:'bill'},
   {name:'Rocket Loan',   amount:530, day:1,  type:'bill'},
   {name:'Student Loan',  amount:50,  day:1,  type:'bill'},
@@ -190,8 +330,17 @@ const DEFAULT_BILLS = [
   {name:'Car Payment',   amount:377, day:25, type:'bill'},
 ];
 
-let state = { balance: 743, customBills: [] };
+let state = {
+  balance: 743,
+  defaultBills: JSON.parse(JSON.stringify(INITIAL_DEFAULT_BILLS)),
+  customBills: [],
+  jobs: [
+    {amount: 300,  dayOfWeek: 2, freq: 14},
+    {amount: 1200, dayOfWeek: 4, freq: 14},
+  ]
+};
 
+// ── Persistence ──────────────────────────────────────────
 function save() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); showToast(); } catch(e) {}
 }
@@ -202,6 +351,8 @@ function load() {
     const p = JSON.parse(raw);
     if (p.balance !== undefined) state.balance = parseFloat(p.balance) || 0;
     if (Array.isArray(p.customBills)) state.customBills = p.customBills;
+    if (Array.isArray(p.defaultBills) && p.defaultBills.length) state.defaultBills = p.defaultBills;
+    if (Array.isArray(p.jobs) && p.jobs.length === 2) state.jobs = p.jobs;
   } catch(e) {}
 }
 function showToast() {
@@ -211,23 +362,22 @@ function showToast() {
   window._tt = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
+// ── Date setup ───────────────────────────────────────────
 const today = new Date(); today.setHours(0,0,0,0);
 document.getElementById('today-label').textContent =
   today.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-function allBills() { return [...DEFAULT_BILLS, ...state.customBills]; }
-
-function getNextBiweekly(targetDay) {
+function getNextBiweekly(dayOfWeek, freqDays) {
   let d = new Date(today);
-  while (d.getDay() !== targetDay) d.setDate(d.getDate()+1);
+  while (d.getDay() !== dayOfWeek) d.setDate(d.getDate()+1);
   let out = [];
-  for (let i=0; i<6; i++) { out.push(new Date(d)); d.setDate(d.getDate()+14); }
+  for (let i=0; i<8; i++) { out.push(new Date(d)); d.setDate(d.getDate()+freqDays); }
   return out;
 }
-const tueChecks = getNextBiweekly(2);
-const thuChecks = getNextBiweekly(4);
-let currentFilter = 'all';
 
+function allBills() { return [...state.defaultBills, ...state.customBills]; }
+
+// ── Events ───────────────────────────────────────────────
 function buildEvents(days) {
   const end = new Date(today); end.setDate(end.getDate()+days);
   let events = [];
@@ -242,16 +392,31 @@ function buildEvents(days) {
     });
     cur.setMonth(cur.getMonth()+1);
   }
-  tueChecks.forEach(d => { if(d>=today&&d<=end) events.push({date:new Date(d),name:'Job 1 Paycheck',amount:300,type:'income',note:''}); });
-  thuChecks.forEach(d => { if(d>=today&&d<=end) events.push({date:new Date(d),name:'Job 2 Paycheck',amount:1200,type:'income',note:''}); });
+  state.jobs.forEach((job, idx) => {
+    const dates = getNextBiweekly(job.dayOfWeek, job.freq);
+    dates.forEach(d => {
+      if (d >= today && d <= end)
+        events.push({date:new Date(d), name:`Job ${idx+1} Paycheck`, amount:job.amount, type:'income', note:''});
+    });
+  });
   events.sort((a,b)=>a.date-b.date);
   return events;
 }
 
+// ── Helpers ──────────────────────────────────────────────
 function fmt(n) { return (n<0?'-$':'$')+Math.abs(n).toFixed(2); }
 function fmtDate(d) { return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
 function ordinal(n) { return n+(n==1?'st':n==2?'nd':n==3?'rd':'th'); }
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
+// ── Render: Timeline ─────────────────────────────────────
+let currentFilter = 'all';
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderTimeline();
+}
 function renderTimeline() {
   const tl = document.getElementById('timeline'); tl.innerHTML='';
   let running = state.balance;
@@ -279,6 +444,7 @@ function renderTimeline() {
   });
 }
 
+// ── Render: 30-Day ───────────────────────────────────────
 function render30Day() {
   const events = buildEvents(30);
   let running=state.balance, lowest=running, total=0, covered=0;
@@ -300,16 +466,20 @@ function render30Day() {
   else warn.classList.remove('show');
 }
 
-function renderPaychecks() {
+// ── Render: Paychecks overview ───────────────────────────
+function renderPaycheckOverview() {
   const el=document.getElementById('paycheck-list'); el.innerHTML='';
-  [[tueChecks,300,'Job 1'],[thuChecks,1200,'Job 2']].forEach(([dates,amt,label])=>{
+  state.jobs.forEach((job, idx) => {
+    const dates = getNextBiweekly(job.dayOfWeek, job.freq);
+    const freqLabel = job.freq===7?'weekly':job.freq===14?'biweekly':'monthly';
     const d=document.createElement('div');
     d.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid rgba(74,222,128,0.25);border-radius:10px;';
-    d.innerHTML=`<div><div style="font-weight:700;font-size:0.88rem;">${label}</div><div style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);">Next: ${fmtDate(dates[0])} · biweekly</div></div><div style="font-family:'DM Mono',monospace;color:var(--accent);font-weight:700;">+${fmt(amt)}</div>`;
+    d.innerHTML=`<div><div style="font-weight:700;font-size:0.88rem;">Job ${idx+1}</div><div style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);">Next: ${fmtDate(dates[0])} · ${freqLabel}</div></div><div style="font-family:'DM Mono',monospace;color:var(--accent);font-weight:700;">+${fmt(job.amount)}</div>`;
     el.appendChild(d);
   });
 }
 
+// ── Render: Fiancée ──────────────────────────────────────
 function renderFiancee() {
   const el=document.getElementById('fiancee-list'); el.innerHTML='';
   allBills().filter(b=>b.type==='fiancee').forEach(b=>{
@@ -320,17 +490,20 @@ function renderFiancee() {
   });
 }
 
+// ── Render: Custom bills ─────────────────────────────────
 function renderCustomList() {
   const el=document.getElementById('custom-list'); el.innerHTML='';
+  const none=document.getElementById('no-custom');
+  if(state.customBills.length===0){ none.style.display='block'; return; }
+  none.style.display='none';
   state.customBills.forEach((b,i)=>{
-    const row=document.createElement('div'); row.className='custom-row';
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;';
     row.innerHTML=`<div><span style="font-weight:600;font-size:0.85rem;">${b.name}</span><span style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);margin-left:8px;">${fmt(b.amount)} · ${ordinal(b.day)}</span></div><button class="del-btn" onclick="removeCustom(${i})">✕</button>`;
     el.appendChild(row);
   });
 }
-
 function removeCustom(i) { state.customBills.splice(i,1); save(); renderAll(); }
-
 function addCustom() {
   const name=document.getElementById('add-name').value.trim();
   const amount=parseFloat(document.getElementById('add-amount').value);
@@ -343,19 +516,80 @@ function addCustom() {
   save(); renderAll();
 }
 
-function setFilter(f,el) {
-  currentFilter=f;
-  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
-  el.classList.add('active');
-  renderTimeline();
+// ── Render: Default bills editor ─────────────────────────
+function renderDefaultBillsEditor() {
+  const el=document.getElementById('default-bills-list'); el.innerHTML='';
+  state.defaultBills.forEach((b,i)=>{
+    const row=document.createElement('div');
+    row.className='edit-row';
+    row.innerHTML=`
+      <input type="text" value="${b.name}" id="db-name-${i}" placeholder="Name">
+      <input type="number" value="${b.amount}" id="db-amount-${i}" placeholder="$" min="0">
+      <input type="number" value="${b.day}" id="db-day-${i}" placeholder="Day" min="1" max="31">
+      <button class="del-btn" onclick="removeDefaultBill(${i})">✕</button>`;
+    el.appendChild(row);
+  });
+}
+function removeDefaultBill(i) {
+  state.defaultBills.splice(i,1);
+  save(); renderAll();
+}
+function saveDefaultBills() {
+  const updated = [];
+  state.defaultBills.forEach((b,i) => {
+    const name = document.getElementById(`db-name-${i}`).value.trim();
+    const amount = parseFloat(document.getElementById(`db-amount-${i}`).value);
+    const day = parseInt(document.getElementById(`db-day-${i}`).value);
+    if (name && !isNaN(amount) && !isNaN(day) && day>=1 && day<=31) {
+      updated.push({...b, name, amount, day});
+    }
+  });
+  state.defaultBills = updated;
+  save(); renderAll();
 }
 
-function renderAll() { renderTimeline(); render30Day(); renderPaychecks(); renderFiancee(); renderCustomList(); }
+// ── Render: Paycheck editor ──────────────────────────────
+function renderPaycheckEditor() {
+  state.jobs.forEach((job,idx)=>{
+    document.getElementById(`job${idx+1}-amount`).value = job.amount;
+    document.getElementById(`job${idx+1}-day`).value = job.dayOfWeek;
+    document.getElementById(`job${idx+1}-freq`).value = job.freq;
+  });
+}
+function savePaychecks() {
+  state.jobs = [1,2].map(n => ({
+    amount: parseFloat(document.getElementById(`job${n}-amount`).value)||0,
+    dayOfWeek: parseInt(document.getElementById(`job${n}-day`).value),
+    freq: parseInt(document.getElementById(`job${n}-freq`).value),
+  }));
+  save(); renderAll();
+}
 
+// ── Tabs ─────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── Render all ───────────────────────────────────────────
+function renderAll() {
+  renderTimeline();
+  render30Day();
+  renderPaycheckOverview();
+  renderFiancee();
+  renderCustomList();
+  renderDefaultBillsEditor();
+  renderPaycheckEditor();
+}
+
+// ── Balance ──────────────────────────────────────────────
 document.getElementById('balance-input').addEventListener('input', function() {
   state.balance=parseFloat(this.value)||0; save(); renderAll();
 });
 
+// ── Boot ─────────────────────────────────────────────────
 load();
 document.getElementById('balance-input').value = state.balance;
 renderAll();
