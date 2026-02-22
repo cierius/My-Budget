@@ -196,14 +196,21 @@
     <div class="card">
       <div class="card-title">Free to Spend</div>
       <div style="display:flex;gap:4px;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:14px;border:1px solid var(--border);">
-        <div id="subtab-paycheck" class="subtab active" onclick="switchSubTab('paycheck')">Until Next Paycheck</div>
-        <div id="subtab-rolling" class="subtab" onclick="switchSubTab('rolling')">2-Month View</div>
+        <div id="subtab-paycheck" class="subtab active" onclick="switchSubTab('paycheck')">Next Paycheck</div>
+        <div id="subtab-month" class="subtab" onclick="switchSubTab('month')">End of Month</div>
+        <div id="subtab-rolling" class="subtab" onclick="switchSubTab('rolling')">2-Month</div>
       </div>
       <div id="subtab-content-paycheck">
         <div class="big-number" id="outlook-num">--</div>
         <div class="stat-label" id="outlook-label"></div>
         <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;" id="outlook-breakdown"></div>
         <div class="warning-banner" id="low-warning2"></div>
+      </div>
+      <div id="subtab-content-month" style="display:none;">
+        <div class="big-number" id="month-num">--</div>
+        <div class="stat-label" id="month-label"></div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;" id="month-breakdown"></div>
+        <div class="warning-banner" id="low-warning4"></div>
       </div>
       <div id="subtab-content-rolling" style="display:none;">
         <div class="big-number" id="rolling-num">--</div>
@@ -581,8 +588,64 @@ function renderRolling30() {
   }
 }
 
+function renderEndOfMonth() {
+  // Find the 1st of next month
+  const nextFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const daysUntil = Math.round((nextFirst - today) / 86400000);
+
+  // All events strictly before the 1st of next month
+  const events = buildEvents(daysUntil + 1);
+  let totalIncome = 0, totalBills = 0;
+  events.forEach(ev => {
+    if (ev.date >= nextFirst) return;
+    if (ev.amount > 0) totalIncome += ev.amount;
+    else totalBills += Math.abs(ev.amount);
+  });
+
+  const freeToSpend = state.balance + totalIncome - totalBills;
+  const monthName = nextFirst.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+
+  const el = document.getElementById('month-num');
+  el.textContent = fmt(freeToSpend);
+  el.className = 'big-number ' + (freeToSpend > 200 ? 'positive' : freeToSpend < 0 ? 'negative' : 'neutral');
+  document.getElementById('month-label').textContent =
+    `free to spend · ${daysUntil === 0 ? 'month ends today' : daysUntil + ' day' + (daysUntil === 1 ? '' : 's') + ' until ' + monthName}`;
+
+  const bd = document.getElementById('month-breakdown');
+  bd.innerHTML = '';
+  [
+    {label: 'Current balance',              value: state.balance,  color: 'var(--text)'},
+    {label: '+ Income before ' + nextFirst.toLocaleDateString('en-US',{month:'short',day:'numeric'}), value: totalIncome, color: 'var(--accent)'},
+    {label: '− Bills before ' + nextFirst.toLocaleDateString('en-US',{month:'short',day:'numeric'}),  value: -totalBills, color: 'var(--red)'},
+  ].forEach(r => {
+    if (r.value === 0) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-family:"DM Mono",monospace;font-size:0.78rem;';
+    row.innerHTML = `<span style="color:var(--muted);">${r.label}</span><span style="color:${r.color};font-weight:600;">${r.value < 0 ? '-$' + Math.abs(r.value).toFixed(2) : fmt(r.value)}</span>`;
+    bd.appendChild(row);
+  });
+  const divider = document.createElement('div');
+  divider.style.cssText = 'border-top:1px solid var(--border);margin:4px 0;';
+  bd.appendChild(divider);
+  const total = document.createElement('div');
+  total.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-family:"DM Mono",monospace;font-size:0.78rem;';
+  total.innerHTML = `<span style="color:var(--muted);">= Free to spend</span><span style="color:${freeToSpend<0?'var(--red)':freeToSpend<100?'var(--yellow)':'var(--accent)'};font-weight:700;">${fmt(freeToSpend)}</span>`;
+  bd.appendChild(total);
+
+  const warn = document.getElementById('low-warning4');
+  if (freeToSpend < 0) {
+    warn.textContent = `⚠ You're ${fmt(Math.abs(freeToSpend))} short before end of month`;
+    warn.classList.add('show');
+  } else if (freeToSpend < 100) {
+    warn.textContent = `⚠ Less than $100 left this month — spend carefully`;
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
+}
+
 function switchSubTab(name) {
-  ['paycheck','rolling'].forEach(t => {
+  ['paycheck','month','rolling'].forEach(t => {
     document.getElementById(`subtab-${t}`).classList.toggle('active', t === name);
     document.getElementById(`subtab-content-${t}`).style.display = t === name ? 'block' : 'none';
   });
@@ -698,6 +761,7 @@ function renderAll() {
   renderTimeline();
   render30Day();
   renderRolling30();
+  renderEndOfMonth();
   renderPaycheckOverview();
   renderFiancee();
   renderCustomList();
