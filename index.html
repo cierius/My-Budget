@@ -172,7 +172,6 @@
         <input type="number" id="balance-input" step="0.01" min="0" style="font-size:1.4rem;font-weight:700;">
       </div>
       <div class="stat-label">edit anytime — saves automatically</div>
-      <div class="warning-banner" id="low-warning"></div>
     </div>
 
     <div class="card">
@@ -189,13 +188,11 @@
     </div>
 
     <div class="card">
-      <div class="card-title">30-Day Outlook</div>
+      <div class="card-title">Free to Spend</div>
       <div class="big-number" id="outlook-num">—</div>
-      <div class="stat-label" id="outlook-label">projected balance after 30 days</div>
-      <div class="prog-wrap">
-        <div class="prog-label"><span>bills covered</span><span id="prog-pct">—</span></div>
-        <div class="prog-bar"><div class="prog-fill good" id="prog-fill" style="width:0%"></div></div>
-      </div>
+      <div class="stat-label" id="outlook-label">after all upcoming bills are covered</div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;" id="outlook-breakdown"></div>
+      <div class="warning-banner" id="low-warning2"></div>
     </div>
 
     <div class="card">
@@ -446,24 +443,59 @@ function renderTimeline() {
 
 // ── Render: 30-Day ───────────────────────────────────────
 function render30Day() {
-  const events = buildEvents(30);
-  let running=state.balance, lowest=running, total=0, covered=0;
+  // Find next Job 2 paycheck date
+  const job2 = state.jobs[1];
+  const job2Dates = getNextBiweekly(job2.dayOfWeek, job2.freq);
+  const nextPaycheck = job2Dates[0];
+  const daysUntil = Math.round((nextPaycheck - today) / 86400000);
+
+  // Bills due strictly before next Job 2 paycheck
+  const events = buildEvents(daysUntil + 1);
+  let billsDue = 0;
   events.forEach(ev => {
-    running+=ev.amount; lowest=Math.min(lowest,running);
-    if(ev.amount<0){ total++; if(running>=0) covered++; }
+    if (ev.amount < 0 && ev.date < nextPaycheck) {
+      billsDue += Math.abs(ev.amount);
+    }
   });
-  const el=document.getElementById('outlook-num');
-  el.textContent=fmt(running);
-  el.className='big-number '+(running>200?'positive':running<0?'negative':'neutral');
-  document.getElementById('outlook-label').textContent=`projected in 30 days · lowest: ${fmt(lowest)}`;
-  const pct=total>0?Math.round(covered/total*100):100;
-  document.getElementById('prog-pct').textContent=pct+'%';
-  const fill=document.getElementById('prog-fill');
-  fill.style.width=pct+'%';
-  fill.className='prog-fill '+(pct>=80?'good':pct>=50?'warn':'bad');
-  const warn=document.getElementById('low-warning');
-  if(lowest<100){ warn.textContent=`⚠ Balance may drop to ${fmt(lowest)} — review timeline`; warn.classList.add('show'); }
-  else warn.classList.remove('show');
+
+  const freeToSpend = state.balance - billsDue;
+
+  const el = document.getElementById('outlook-num');
+  el.textContent = fmt(freeToSpend);
+  el.className = 'big-number ' + (freeToSpend > 200 ? 'positive' : freeToSpend < 0 ? 'negative' : 'neutral');
+  document.getElementById('outlook-label').textContent =
+    `free to spend · Job 2 paycheck in ${daysUntil === 0 ? 'today!' : daysUntil + ' day' + (daysUntil === 1 ? '' : 's')} (${fmtDate(nextPaycheck)})`;
+
+  // Breakdown
+  const bd = document.getElementById('outlook-breakdown');
+  bd.innerHTML = '';
+  [
+    {label: 'Current balance', value: state.balance, color: 'var(--text)'},
+    {label: `− Bills before ${fmtDate(nextPaycheck)}`, value: -billsDue, color: 'var(--red)'},
+  ].forEach(r => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-family:"DM Mono",monospace;font-size:0.78rem;';
+    row.innerHTML = `<span style="color:var(--muted);">${r.label}</span><span style="color:${r.color};font-weight:600;">${r.value < 0 ? '-$' + Math.abs(r.value).toFixed(2) : fmt(r.value)}</span>`;
+    bd.appendChild(row);
+  });
+  const divider = document.createElement('div');
+  divider.style.cssText = 'border-top:1px solid var(--border);margin:4px 0;';
+  bd.appendChild(divider);
+  const total = document.createElement('div');
+  total.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-family:"DM Mono",monospace;font-size:0.78rem;';
+  total.innerHTML = `<span style="color:var(--muted);">= Free to spend</span><span style="color:${freeToSpend<0?'var(--red)':freeToSpend<100?'var(--yellow)':'var(--accent)'};font-weight:700;">${fmt(freeToSpend)}</span>`;
+  bd.appendChild(total);
+
+  const warn = document.getElementById('low-warning2');
+  if (freeToSpend < 0) {
+    warn.textContent = `⚠ You're ${fmt(Math.abs(freeToSpend))} short before your next paycheck`;
+    warn.classList.add('show');
+  } else if (freeToSpend < 100) {
+    warn.textContent = `⚠ Less than $100 left — spend carefully until ${fmtDate(nextPaycheck)}`;
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
 }
 
 // ── Render: Paychecks overview ───────────────────────────
