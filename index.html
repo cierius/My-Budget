@@ -147,6 +147,12 @@
   .saved-toast.show { opacity: 1; }
 
   hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  .subtab {
+    flex: 1; text-align: center; padding: 7px 6px; border-radius: 8px;
+    font-size: 0.68rem; font-family: 'DM Mono', monospace; letter-spacing: 0.03em;
+    color: var(--muted); cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+  }
+  .subtab.active { background: var(--surface); color: var(--accent); border-color: var(--border); }
 </style>
 </head>
 <body>
@@ -189,10 +195,22 @@
 
     <div class="card">
       <div class="card-title">Free to Spend</div>
-      <div class="big-number" id="outlook-num">—</div>
-      <div class="stat-label" id="outlook-label">after all upcoming bills are covered</div>
-      <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;" id="outlook-breakdown"></div>
-      <div class="warning-banner" id="low-warning2"></div>
+      <div style="display:flex;gap:4px;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:14px;border:1px solid var(--border);">
+        <div id="subtab-paycheck" class="subtab active" onclick="switchSubTab('paycheck')">Until Next Paycheck</div>
+        <div id="subtab-rolling" class="subtab" onclick="switchSubTab('rolling')">2-Month View</div>
+      </div>
+      <div id="subtab-content-paycheck">
+        <div class="big-number" id="outlook-num">--</div>
+        <div class="stat-label" id="outlook-label"></div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;" id="outlook-breakdown"></div>
+        <div class="warning-banner" id="low-warning2"></div>
+      </div>
+      <div id="subtab-content-rolling" style="display:none;">
+        <div class="big-number" id="rolling-num">--</div>
+        <div class="stat-label" id="rolling-label"></div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;" id="rolling-breakdown"></div>
+        <div class="warning-banner" id="low-warning3"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -498,7 +516,77 @@ function render30Day() {
   }
 }
 
-// ── Render: Paychecks overview ───────────────────────────
+function renderRolling30() {
+  // Build events for 2 full months
+  const twoMonths = buildEvents(60);
+
+  // Also grab bills that fall on the 1st of month 3
+  const month3Start = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+  const month3End   = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+  let month3Bills = 0;
+  allBills().forEach(b => {
+    if (b.day === 1) {
+      const d = new Date(month3Start.getFullYear(), month3Start.getMonth(), 1);
+      month3Bills += b.amount;
+    }
+  });
+
+  let totalIncome = 0, totalBills = 0;
+  twoMonths.forEach(ev => {
+    if (ev.amount > 0) totalIncome += ev.amount;
+    else totalBills += Math.abs(ev.amount);
+  });
+  totalBills += month3Bills;
+
+  const freeToSpend = state.balance + totalIncome - totalBills;
+
+  const el = document.getElementById('rolling-num');
+  el.textContent = fmt(freeToSpend);
+  el.className = 'big-number ' + (freeToSpend > 200 ? 'positive' : freeToSpend < 0 ? 'negative' : 'neutral');
+
+  const month3Name = month3Start.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+  document.getElementById('rolling-label').textContent = `free to spend over 2 months, incl. ${month3Name} 1st bills`;
+
+  const bd = document.getElementById('rolling-breakdown');
+  bd.innerHTML = '';
+  [
+    {label: 'Current balance',          value: state.balance,   color: 'var(--text)'},
+    {label: '+ Income (2 months)',       value: totalIncome,     color: 'var(--accent)'},
+    {label: '− Bills (2 months)',        value: -(totalBills - month3Bills), color: 'var(--red)'},
+    {label: `− ${month3Name} 1st bills`, value: -month3Bills,   color: 'var(--red)'},
+  ].forEach(r => {
+    if (r.value === 0) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-family:"DM Mono",monospace;font-size:0.78rem;';
+    row.innerHTML = `<span style="color:var(--muted);">${r.label}</span><span style="color:${r.color};font-weight:600;">${r.value < 0 ? '-$' + Math.abs(r.value).toFixed(2) : fmt(r.value)}</span>`;
+    bd.appendChild(row);
+  });
+  const divider = document.createElement('div');
+  divider.style.cssText = 'border-top:1px solid var(--border);margin:4px 0;';
+  bd.appendChild(divider);
+  const total = document.createElement('div');
+  total.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-family:"DM Mono",monospace;font-size:0.78rem;';
+  total.innerHTML = `<span style="color:var(--muted);">= Free to spend</span><span style="color:${freeToSpend<0?'var(--red)':freeToSpend<100?'var(--yellow)':'var(--accent)'};font-weight:700;">${fmt(freeToSpend)}</span>`;
+  bd.appendChild(total);
+
+  const warn = document.getElementById('low-warning3');
+  if (freeToSpend < 0) {
+    warn.textContent = `⚠ You're ${fmt(Math.abs(freeToSpend))} short over the next 2 months`;
+    warn.classList.add('show');
+  } else if (freeToSpend < 100) {
+    warn.textContent = `⚠ Less than $100 of breathing room over the next 2 months`;
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
+}
+
+function switchSubTab(name) {
+  ['paycheck','rolling'].forEach(t => {
+    document.getElementById(`subtab-${t}`).classList.toggle('active', t === name);
+    document.getElementById(`subtab-content-${t}`).style.display = t === name ? 'block' : 'none';
+  });
+}
 function renderPaycheckOverview() {
   const el=document.getElementById('paycheck-list'); el.innerHTML='';
   state.jobs.forEach((job, idx) => {
@@ -609,6 +697,7 @@ function switchTab(name, el) {
 function renderAll() {
   renderTimeline();
   render30Day();
+  renderRolling30();
   renderPaycheckOverview();
   renderFiancee();
   renderCustomList();
